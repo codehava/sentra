@@ -7,6 +7,7 @@ import { getFieldAccess } from '@/services/field-access.service';
 import { createTransaction } from '@/services/transactions.service';
 import { getSystemFieldOptions } from '@/services/fields.service';
 import { getUserBranches } from '@/services/user-branches.service';
+import { validateFile, FILE_UPLOAD_CONFIG } from '@/lib/r2-storage';
 import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -130,11 +131,25 @@ export function CreateTransactionPage() {
 
     const handleFileChange = (fieldCode: string, files: FileList | null) => {
         if (!files) return;
+
+        const validFiles: File[] = [];
         const fileArray = Array.from(files);
-        setUploadedFiles(prev => ({
-            ...prev,
-            [fieldCode]: [...(prev[fieldCode] || []), ...fileArray],
-        }));
+
+        for (const file of fileArray) {
+            const validation = validateFile(file);
+            if (!validation.valid) {
+                toast.error(validation.error);
+            } else {
+                validFiles.push(file);
+            }
+        }
+
+        if (validFiles.length > 0) {
+            setUploadedFiles(prev => ({
+                ...prev,
+                [fieldCode]: [...(prev[fieldCode] || []), ...validFiles],
+            }));
+        }
     };
 
     const removeFile = (fieldCode: string, index: number) => {
@@ -419,7 +434,7 @@ function FieldRenderer({
                             <Upload className="h-8 w-8 text-muted-foreground mb-2" />
                             <span className="text-sm font-medium">Klik untuk upload file</span>
                             <span className="text-xs text-muted-foreground mt-1">
-                                Dapat upload multiple files
+                                Maks 5MB per file • PDF, Gambar, Office
                             </span>
                         </label>
                         <input
