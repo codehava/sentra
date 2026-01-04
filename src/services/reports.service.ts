@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import type { Transaction } from '@/types';
 
 export interface ReportFilters {
     transactionTypeId?: number;
@@ -11,10 +10,8 @@ export interface ReportFilters {
     createdBy?: string;
 }
 
-export interface TransactionReport extends Transaction {
-    transaction_type?: { id: number; code: string; name: string };
-    creator?: { id: string; full_name: string; nip: string };
-}
+// Use any for flexible Supabase response handling
+export type TransactionReport = any;
 
 // Get transactions with filters for reports
 export async function getTransactionReport(filters: ReportFilters): Promise<TransactionReport[]> {

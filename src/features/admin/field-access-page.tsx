@@ -172,7 +172,7 @@ export function FieldAccessPage() {
                 .from('field_access_matrix')
                 .select('*')
                 .eq('transaction_type_id', parseInt(selectedTypeId))
-                .eq('stage_code', previousStage.stage_code)
+                .eq('stage_code', previousStage.stageCode)
         );
 
         if (error || !prevAccess || prevAccess.length === 0) {
@@ -195,7 +195,7 @@ export function FieldAccessPage() {
 
         try {
             await Promise.all(copyPromises);
-            toast.success(`${prevAccess.length} field berhasil di-copy dari ${previousStage.stage_name}`);
+            toast.success(`${prevAccess.length} field berhasil di-copy dari ${previousStage.stageName}`);
             queryClient.invalidateQueries({ queryKey: ['field-access'] });
         } catch (e) {
             toast.error('Gagal copy beberapa field');

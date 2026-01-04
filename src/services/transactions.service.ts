@@ -1,10 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import type { Transaction } from '@/types';
 
-export interface TransactionWithDetails extends Transaction {
-    transaction_type?: { id: number; code: string; name: string };
-    creator?: { id: string; full_name: string; nip: string };
-}
+// Use any for flexible Supabase response handling
+export type TransactionWithDetails = any;
 
 // Get all transactions
 export async function getTransactions(filters?: {
@@ -124,7 +122,7 @@ export async function createTransaction(data: {
     branch_code?: string;
 }): Promise<Transaction> {
     // Generate ticket number
-    const { data: ticketData, error: ticketError } = await supabase
+    const { data: ticketData } = await supabase
         .rpc('generate_ticket_number', { type_code: '' });
 
     // Get first stage for this transaction type

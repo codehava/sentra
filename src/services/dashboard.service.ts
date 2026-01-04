@@ -13,12 +13,12 @@ export interface DashboardStats {
 export interface SlaTransaction {
     id: string;
     ticket_number: string;
-    transaction_type: { code: string; name: string };
+    transaction_type: any;
     current_stage: string;
     sla_status: string;
     stage_started_at: string;
     stage_sla_deadline: string | null;
-    creator: { full_name: string; nip: string };
+    creator: any;
 }
 
 // Get dashboard statistics
@@ -183,7 +183,7 @@ export async function getSlaBreachedTransactions(limit = 10): Promise<SlaTransac
         .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as SlaTransaction[];
 }
 
 // Get SLA at-risk transactions
@@ -206,7 +206,7 @@ export async function getSlaAtRiskTransactions(limit = 10): Promise<SlaTransacti
         .limit(limit);
 
     if (error) throw error;
-    return data || [];
+    return (data || []) as SlaTransaction[];
 }
 
 // Get transaction summary by type

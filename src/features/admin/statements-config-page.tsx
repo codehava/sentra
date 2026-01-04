@@ -167,8 +167,8 @@ export function StatementsConfigPage() {
 
     // Get stage name from routing
     const getStageName = (code: string) => {
-        const stage = routing.find((r: any) => r.stage_code === code);
-        return stage?.stage_name || code;
+        const stage = routing.find((r: any) => r.stage_code === code || r.stageCode === code);
+        return (stage as any)?.stage_name || (stage as any)?.stageName || code;
     };
 
     return (

@@ -162,7 +162,7 @@ export function FieldMasterPage() {
             name: item.name,
             type: item.type,
             description: item.description || '',
-            is_active: item.is_active,
+            is_active: (item as any).is_active ?? (item as any).isActive ?? true,
         });
         if (item.options && Array.isArray(item.options)) {
             setOptions(item.options);
@@ -492,8 +492,8 @@ export function FieldMasterPage() {
                                                 {editingOption?.code === opt.value ? (
                                                     <div className="flex gap-2">
                                                         <Input
-                                                            value={editingOption.name}
-                                                            onChange={(e) => setEditingOption({ ...editingOption, name: e.target.value })}
+                                                            value={editingOption?.name || ''}
+                                                            onChange={(e) => setEditingOption(editingOption ? { ...editingOption, name: e.target.value } : null)}
                                                             className="h-8"
                                                         />
                                                         <Button
@@ -503,7 +503,7 @@ export function FieldMasterPage() {
                                                                     updateOptionMutation.mutate({
                                                                         table: selectedSystemField.source_table,
                                                                         code: opt.value,
-                                                                        updates: { name: editingOption.name },
+                                                                        updates: { name: editingOption?.name || '' },
                                                                     });
                                                                 }
                                                             }}
@@ -646,8 +646,8 @@ function FieldTable({
                                         ) : null}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={field.is_active ? 'default' : 'secondary'}>
-                                            {field.is_active ? 'Active' : 'Inactive'}
+                                        <Badge variant={(field as any).is_active ?? (field as any).isActive ? 'default' : 'secondary'}>
+                                            {(field as any).is_active ?? (field as any).isActive ? 'Active' : 'Inactive'}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">

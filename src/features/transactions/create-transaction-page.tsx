@@ -96,13 +96,13 @@ export function CreateTransactionPage() {
 
             // For file fields, check uploadedFiles state
             if (fieldType === 'file') {
-                if (!uploadedFiles[fieldCode] || uploadedFiles[fieldCode].length === 0) {
+                if (fieldCode && (!uploadedFiles[fieldCode] || uploadedFiles[fieldCode].length === 0)) {
                     toast.error(`Field ${mf.field?.name} wajib diisi`);
                     return;
                 }
             } else {
                 // For other fields, check formData
-                if (!formData[fieldCode]) {
+                if (fieldCode && !formData[fieldCode]) {
                     toast.error(`Field ${mf.field?.name} wajib diisi`);
                     return;
                 }
@@ -339,7 +339,7 @@ function FieldRenderer({
                             id={field.code}
                             className="pl-12 h-11 text-right font-mono"
                             {...form.register(field.code, {
-                                onChange: (e) => {
+                                onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
                                     const formatted = formatCurrency(e.target.value);
                                     e.target.value = formatted;
                                 },
