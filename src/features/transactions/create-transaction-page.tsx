@@ -7,7 +7,7 @@ import { getFieldAccess } from '@/services/field-access.service';
 import { createTransaction } from '@/services/transactions.service';
 import { getSystemFieldOptions } from '@/services/fields.service';
 import { getUserBranches } from '@/services/user-branches.service';
-import { validateFile, FILE_UPLOAD_CONFIG } from '@/lib/r2-storage';
+import { validateFile, FILE_UPLOAD_CONFIG } from '@/lib/storage.service';
 import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
