@@ -164,7 +164,7 @@ export function FieldAccessPage() {
             return;
         }
 
-        const previousStage = stages[currentIndex - 1];
+        const previousStage = stages[currentIndex - 1] as any;
 
         // Get field access from previous stage
         const { data: prevAccess, error } = await import('@/lib/supabase').then(m =>
@@ -172,7 +172,7 @@ export function FieldAccessPage() {
                 .from('field_access_matrix')
                 .select('*')
                 .eq('transaction_type_id', parseInt(selectedTypeId))
-                .eq('stage_code', previousStage.stageCode)
+                .eq('stage_code', previousStage.stage_code)
         );
 
         if (error || !prevAccess || prevAccess.length === 0) {
@@ -195,7 +195,7 @@ export function FieldAccessPage() {
 
         try {
             await Promise.all(copyPromises);
-            toast.success(`${prevAccess.length} field berhasil di-copy dari ${previousStage.stageName}`);
+            toast.success(`${prevAccess.length} field berhasil di-copy dari ${previousStage.stage_name}`);
             queryClient.invalidateQueries({ queryKey: ['field-access'] });
         } catch (e) {
             toast.error('Gagal copy beberapa field');
