@@ -147,3 +147,20 @@ export async function getRoles(): Promise<Role[]> {
     if (error) throw error;
     return data || [];
 }
+
+// Reset user password to default (Sentra@{NIP})
+export async function resetUserPassword(userId: string, nip: string): Promise<{ success: boolean; newPassword: string }> {
+    const defaultPassword = `Sentra@${nip}`;
+
+    const { data, error } = await supabase.rpc('admin_set_password', {
+        p_user_id: userId,
+        p_new_password: defaultPassword,
+    });
+
+    if (error) throw new Error('Gagal reset password: ' + error.message);
+
+    return {
+        success: data as boolean,
+        newPassword: defaultPassword,
+    };
+}

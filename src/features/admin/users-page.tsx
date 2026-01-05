@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getUsers, createUser, updateUser, deleteUser, getRoles } from '@/services/users.service';
+import { getUsers, createUser, updateUser, deleteUser, getRoles, resetUserPassword } from '@/services/users.service';
 import { getUserBranches, getAllBranches, assignUserBranches } from '@/services/user-branches.service';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,7 +30,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Loader2, Building2, Key, Copy, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Building2, Key, Copy, Check, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
 
@@ -116,6 +116,29 @@ export function UsersPage() {
             toast.error(`Failed to delete: ${error.message}`);
         },
     });
+
+    const resetPasswordMutation = useMutation({
+        mutationFn: ({ userId, nip }: { userId: string; nip: string }) => resetUserPassword(userId, nip),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            // Show the password dialog
+            setCreatedUserInfo({
+                email: selectedUser?.email || '',
+                password: data.newPassword,
+            });
+            setPasswordDialogOpen(true);
+        },
+        onError: (error: Error) => {
+            toast.error(`Failed to reset password: ${error.message}`);
+        },
+    });
+
+    const handleResetPassword = (user: any) => {
+        if (confirm(`Reset password untuk ${user.full_name} ke default (Sentra@${user.nip})?`)) {
+            setSelectedUser(user);
+            resetPasswordMutation.mutate({ userId: user.id, nip: user.nip });
+        }
+    };
 
     const openCreateDialog = () => {
         setEditingItem(null);
@@ -251,6 +274,9 @@ export function UsersPage() {
                                                 <div className="flex justify-end gap-1">
                                                     <Button variant="ghost" size="icon" onClick={() => openBranchDialog(user)} title="Assign Branches">
                                                         <Building2 className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" onClick={() => handleResetPassword(user)} title="Reset Password">
+                                                        <RotateCcw className="h-4 w-4" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" onClick={() => openEditDialog(user)}>
                                                         <Pencil className="h-4 w-4" />
@@ -416,10 +442,10 @@ export function UsersPage() {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Key className="h-5 w-5 text-green-600" />
-                            User Berhasil Dibuat
+                            Password Berhasil Diatur
                         </DialogTitle>
                         <DialogDescription>
-                            Berikut adalah informasi login untuk user baru. Pastikan untuk menyimpan password ini.
+                            Berikut adalah informasi password user. Pastikan untuk menyimpan password ini.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4">
