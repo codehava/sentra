@@ -52,12 +52,7 @@ export async function createUser(user: {
     // Generate default password if not provided
     const defaultPassword = user.password || `Sentra@${user.nip}`;
 
-    // Note: Creating Supabase Auth user from client-side requires either:
-    // 1. Using signUp (but this will auto-login the new user)
-    // 2. Using Supabase Edge Function with service_role key
-    // 3. Manual user registration flow
-    // For now, we just create the database user and admin needs to tell user to use the default password
-
+    // Create the user in database
     const { data, error } = await supabase
         .from('users')
         .insert({
@@ -66,6 +61,7 @@ export async function createUser(user: {
             email: user.email,
             role_id: user.role_id,
             is_active: user.is_active ?? true,
+            must_change_password: true,
         })
         .select(`
       *,
@@ -74,6 +70,19 @@ export async function createUser(user: {
         .single();
 
     if (error) throw error;
+
+    // Set the password hash using the database function
+    const { error: passwordError } = await supabase.rpc('admin_set_password', {
+        p_user_id: data.id,
+        p_new_password: defaultPassword,
+    });
+
+    if (passwordError) {
+        console.error('Error setting password:', passwordError);
+        // Delete the user if password setting failed
+        await supabase.from('users').delete().eq('id', data.id);
+        throw new Error('Gagal mengatur password default');
+    }
 
     return { ...data, defaultPassword };
 }
