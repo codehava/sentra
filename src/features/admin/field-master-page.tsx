@@ -73,6 +73,7 @@ export function FieldMasterPage() {
         type: 'text',
         description: '',
         is_active: true,
+        is_unique: false,
     });
     const [options, setOptions] = useState<OptionItem[]>([]);
 
@@ -150,7 +151,7 @@ export function FieldMasterPage() {
 
     const openCreateDialog = () => {
         setEditingItem(null);
-        setFormData({ code: '', name: '', type: 'text', description: '', is_active: true });
+        setFormData({ code: '', name: '', type: 'text', description: '', is_active: true, is_unique: false });
         setOptions([]);
         setIsDialogOpen(true);
     };
@@ -163,6 +164,7 @@ export function FieldMasterPage() {
             type: item.type,
             description: item.description || '',
             is_active: (item as any).is_active ?? (item as any).isActive ?? true,
+            is_unique: (item as any).is_unique ?? false,
         });
         if (item.options && Array.isArray(item.options)) {
             setOptions(item.options);
@@ -192,6 +194,7 @@ export function FieldMasterPage() {
             type: formData.type,
             description: formData.description || null,
             is_active: formData.is_active,
+            is_unique: formData.is_unique,
             options: formData.type === 'select' ? options : null,
         };
 
@@ -428,6 +431,22 @@ export function FieldMasterPage() {
                                     className="h-4 w-4"
                                 />
                                 <Label htmlFor="is_active">Active</Label>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="is_unique"
+                                    checked={formData.is_unique}
+                                    onChange={(e) => setFormData({ ...formData, is_unique: e.target.checked })}
+                                    className="h-4 w-4"
+                                />
+                                <Label htmlFor="is_unique" className="flex items-center gap-1">
+                                    Unique Value
+                                    <span className="text-xs text-muted-foreground">
+                                        (Tidak boleh sama antar transaksi, untuk cegah double payment)
+                                    </span>
+                                </Label>
                             </div>
                         </div>
                         <DialogFooter>

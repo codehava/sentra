@@ -121,9 +121,18 @@ export async function createTransaction(data: {
     created_by: string;
     branch_code?: string;
 }): Promise<Transaction> {
-    // Generate ticket number
+    // Get transaction type code for ticket number prefix
+    const { data: transactionType } = await supabase
+        .from('transaction_types')
+        .select('code')
+        .eq('id', data.transaction_type_id)
+        .single();
+
+    const typeCode = transactionType?.code || '';
+
+    // Generate ticket number with transaction type code as prefix
     const { data: ticketData } = await supabase
-        .rpc('generate_ticket_number', { type_code: '' });
+        .rpc('generate_ticket_number', { p_type_code: typeCode });
 
     // Get first stage for this transaction type
     const { data: firstStage, error: stageError } = await supabase
@@ -140,7 +149,7 @@ export async function createTransaction(data: {
         .from('transactions')
         .insert({
             transaction_type_id: data.transaction_type_id,
-            ticket_number: ticketData || `TRX-${Date.now()}`,
+            ticket_number: ticketData || `${typeCode || 'TRX'}-${Date.now()}`,
             current_stage: firstStage?.stage_code || 'MAKER',
             status: 'OPEN',
             data: data.data,
@@ -153,6 +162,9 @@ export async function createTransaction(data: {
 
     if (error) throw error;
 
+    // Register unique field values
+    await registerUniqueFieldValues(transaction.id, data.transaction_type_id, data.data);
+
     // Create history entry
     await createHistoryEntry({
         transaction_id: transaction.id,
@@ -162,6 +174,37 @@ export async function createTransaction(data: {
     });
 
     return transaction;
+}
+
+// Helper: Register unique field values after transaction creation
+async function registerUniqueFieldValues(
+    transactionId: string,
+    transactionTypeId: number,
+    formData: Record<string, unknown>
+): Promise<void> {
+    // Get all unique fields
+    const { data: uniqueFields } = await supabase
+        .from('field_master')
+        .select('code')
+        .eq('is_unique', true);
+
+    if (!uniqueFields || uniqueFields.length === 0) return;
+
+    // Register each unique field value
+    for (const field of uniqueFields) {
+        const value = formData[field.code];
+        if (value && typeof value === 'string') {
+            await supabase
+                .from('unique_field_values')
+                .insert({
+                    transaction_id: transactionId,
+                    transaction_type_id: transactionTypeId,
+                    field_code: field.code,
+                    field_value: value,
+                })
+                .select();
+        }
+    }
 }
 
 // Process transaction (approve/reject)

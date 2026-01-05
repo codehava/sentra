@@ -7,6 +7,7 @@ import { getFieldAccess } from '@/services/field-access.service';
 import { createTransaction } from '@/services/transactions.service';
 import { getSystemFieldOptions } from '@/services/fields.service';
 import { getUserBranches } from '@/services/user-branches.service';
+import { checkUniqueFieldValue } from '@/services/unique-fields.service';
 import { validateFile, FILE_UPLOAD_CONFIG } from '@/lib/storage.service';
 import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
@@ -80,7 +81,7 @@ export function CreateTransactionPage() {
         },
     });
 
-    const handleSubmit = (formData: any) => {
+    const handleSubmit = async (formData: any) => {
         if (!transactionType || !user) return;
 
         // Check branch selection
@@ -105,6 +106,30 @@ export function CreateTransactionPage() {
                 // For other fields, check formData
                 if (fieldCode && !formData[fieldCode]) {
                     toast.error(`Field ${mf.field?.name} wajib diisi`);
+                    return;
+                }
+            }
+        }
+
+        // Check unique fields for duplicates
+        const uniqueFields = fieldAccess.filter((fa: any) => fa.field?.is_unique);
+        for (const uf of uniqueFields) {
+            const fieldCode = uf.field?.code as string | undefined;
+            if (!fieldCode) continue;
+
+            const fieldValue = formData[fieldCode];
+
+            if (fieldCode && fieldValue) {
+                const { isUnique, existingTicketNumber } = await checkUniqueFieldValue(
+                    fieldCode,
+                    String(fieldValue),
+                    transactionType.id
+                );
+
+                if (!isUnique) {
+                    toast.error(
+                        `${uf.field?.name} "${fieldValue}" sudah pernah digunakan pada tiket ${existingTicketNumber || 'lain'}. Tidak boleh ada data yang sama untuk menghindari double payment.`
+                    );
                     return;
                 }
             }
