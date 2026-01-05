@@ -45,6 +45,7 @@ export interface RoutingMatrix {
     stageName: string;
     roleId: number;
     isFinal: boolean;
+    return_to_stage?: string;
 }
 
 export interface FieldAccessMatrix {

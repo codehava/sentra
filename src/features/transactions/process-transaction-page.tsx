@@ -56,7 +56,7 @@ export function ProcessTransactionPage() {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
 
-    const [actionDialog, setActionDialog] = useState<'approve' | 'reject' | null>(null);
+    const [actionDialog, setActionDialog] = useState<'approve' | 'reject' | 'return' | null>(null);
     const [comment, setComment] = useState('');
     const [statementsAccepted, setStatementsAccepted] = useState<Record<number, boolean>>({});
 
@@ -101,6 +101,8 @@ export function ProcessTransactionPage() {
     const canProcess =
         user?.role?.code === currentStageInfo?.role?.code &&
         transaction?.status === 'OPEN';
+    // Check if stage has return_to_stage configured
+    const canReturn = !!currentStageInfo?.return_to_stage;
 
     // Process mutation
     const processMutation = useMutation({
@@ -108,18 +110,21 @@ export function ProcessTransactionPage() {
             action,
             comment,
         }: {
-            action: 'APPROVED' | 'REJECTED';
+            action: 'APPROVED' | 'REJECTED' | 'RETURNED';
             comment?: string;
         }) => processTransaction(id!, action, user?.id || '', comment),
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['transaction', id] });
             queryClient.invalidateQueries({ queryKey: ['transaction-history', id] });
             queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
-            toast.success(
-                actionDialog === 'approve'
-                    ? 'Transaksi berhasil disetujui'
-                    : 'Transaksi berhasil ditolak'
-            );
+
+            const messages = {
+                approve: 'Transaksi berhasil disetujui',
+                reject: 'Transaksi berhasil ditolak',
+                return: 'Transaksi berhasil dikembalikan',
+            };
+            toast.success(messages[actionDialog!] || 'Transaksi berhasil diproses');
+
             setActionDialog(null);
             if (data.status !== 'OPEN') {
                 navigate('/tasks');
@@ -142,8 +147,14 @@ export function ProcessTransactionPage() {
             }
         }
 
+        const actionMap = {
+            approve: 'APPROVED' as const,
+            reject: 'REJECTED' as const,
+            return: 'RETURNED' as const,
+        };
+
         processMutation.mutate({
-            action: actionDialog === 'approve' ? 'APPROVED' : 'REJECTED',
+            action: actionMap[actionDialog],
             comment,
         });
     };
@@ -221,6 +232,12 @@ export function ProcessTransactionPage() {
                             <XCircle className="h-4 w-4 mr-2" />
                             Tolak
                         </Button>
+                        {canReturn && (
+                            <Button variant="outline" className="text-orange-600" onClick={() => setActionDialog('return')}>
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                                Kembalikan
+                            </Button>
+                        )}
                         <Button onClick={() => setActionDialog('approve')}>
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Setujui
@@ -370,12 +387,14 @@ export function ProcessTransactionPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            {actionDialog === 'approve' ? 'Setujui Transaksi' : 'Tolak Transaksi'}
+                            {actionDialog === 'approve' && 'Setujui Transaksi'}
+                            {actionDialog === 'reject' && 'Tolak Transaksi'}
+                            {actionDialog === 'return' && 'Kembalikan Transaksi'}
                         </DialogTitle>
                         <DialogDescription>
-                            {actionDialog === 'approve'
-                                ? 'Transaksi akan dilanjutkan ke stage berikutnya'
-                                : 'Transaksi akan ditolak dan tidak dapat diproses kembali'}
+                            {actionDialog === 'approve' && 'Transaksi akan dilanjutkan ke stage berikutnya'}
+                            {actionDialog === 'reject' && 'Transaksi akan ditolak dan tidak dapat diproses kembali'}
+                            {actionDialog === 'return' && `Transaksi akan dikembalikan ke stage ${currentStageInfo?.return_to_stage}`}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -414,7 +433,7 @@ export function ProcessTransactionPage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="comment">
-                                Komentar {actionDialog === 'reject' && '(wajib)'}
+                                Komentar {(actionDialog === 'reject' || actionDialog === 'return') && '(wajib)'}
                             </Label>
                             <textarea
                                 id="comment"
@@ -424,9 +443,11 @@ export function ProcessTransactionPage() {
                                 placeholder={
                                     actionDialog === 'approve'
                                         ? 'Komentar tambahan (opsional)'
-                                        : 'Masukkan alasan penolakan'
+                                        : actionDialog === 'return'
+                                            ? 'Masukkan alasan pengembalian'
+                                            : 'Masukkan alasan penolakan'
                                 }
-                                required={actionDialog === 'reject'}
+                                required={actionDialog === 'reject' || actionDialog === 'return'}
                             />
                         </div>
                     </div>
@@ -436,16 +457,19 @@ export function ProcessTransactionPage() {
                             Batal
                         </Button>
                         <Button
-                            variant={actionDialog === 'reject' ? 'destructive' : 'default'}
+                            variant={actionDialog === 'reject' ? 'destructive' : actionDialog === 'return' ? 'outline' : 'default'}
+                            className={actionDialog === 'return' ? 'text-orange-600 border-orange-600 hover:bg-orange-50' : ''}
                             onClick={handleAction}
                             disabled={
                                 processMutation.isPending ||
-                                (actionDialog === 'reject' && !comment) ||
+                                ((actionDialog === 'reject' || actionDialog === 'return') && !comment) ||
                                 (actionDialog === 'approve' && statements.length > 0 && !allRequiredStatementsAccepted)
                             }
                         >
                             {processMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {actionDialog === 'approve' ? 'Setujui' : 'Tolak'}
+                            {actionDialog === 'approve' && 'Setujui'}
+                            {actionDialog === 'reject' && 'Tolak'}
+                            {actionDialog === 'return' && 'Kembalikan'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

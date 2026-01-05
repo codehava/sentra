@@ -212,6 +212,23 @@ export async function processTransaction(
         }
     } else if (action === 'REJECTED') {
         updates = { status: 'REJECTED' };
+    } else if (action === 'RETURNED') {
+        // Get return_to_stage from routing matrix
+        const { data: currentStage } = await supabase
+            .from('routing_matrix')
+            .select('return_to_stage')
+            .eq('transaction_type_id', transaction.transaction_type_id)
+            .eq('stage_code', transaction.current_stage)
+            .single();
+
+        if (currentStage?.return_to_stage) {
+            updates = {
+                current_stage: currentStage.return_to_stage,
+                stage_started_at: new Date().toISOString(),
+            };
+        } else {
+            throw new Error('Return stage tidak dikonfigurasi untuk stage ini');
+        }
     }
 
     // Update transaction
