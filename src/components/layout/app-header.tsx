@@ -159,6 +159,7 @@ export function AppHeader() {
                         <DropdownMenuItem
                             onClick={async () => {
                                 await logout();
+                                useAuthStore.getState().logout();
                                 navigate('/login');
                             }}
                             className="text-destructive focus:text-destructive"

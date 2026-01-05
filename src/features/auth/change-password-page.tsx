@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { changePassword } from '@/services/auth.service';
 import { useAuthStore } from '@/stores/auth-store';
@@ -6,28 +7,32 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Lock, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Lock, CheckCircle, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function ChangePasswordPage() {
     const { user } = useAuthStore();
+    const location = useLocation();
+    const warningMessage = location.state?.message;
+
     const [formData, setFormData] = useState({
-        currentPassword: '',
         newPassword: '',
         confirmPassword: '',
     });
     const [showPasswords, setShowPasswords] = useState({
-        current: false,
         new: false,
         confirm: false,
     });
     const [success, setSuccess] = useState(false);
 
     const mutation = useMutation({
-        mutationFn: () => changePassword(formData.newPassword),
+        mutationFn: () => {
+            if (!user?.id) throw new Error('User tidak ditemukan');
+            return changePassword(user.id, formData.newPassword);
+        },
         onSuccess: () => {
             setSuccess(true);
-            setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            setFormData({ newPassword: '', confirmPassword: '' });
             toast.success('Password berhasil diubah');
         },
         onError: (error: Error) => {
@@ -52,7 +57,7 @@ export function ChangePasswordPage() {
         mutation.mutate();
     };
 
-    const toggleShowPassword = (field: 'current' | 'new' | 'confirm') => {
+    const toggleShowPassword = (field: 'new' | 'confirm') => {
         setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
     };
 
@@ -88,10 +93,17 @@ export function ChangePasswordPage() {
                         Ubah Password
                     </CardTitle>
                     <CardDescription>
-                        Masukkan password baru untuk akun {user?.email}
+                        Masukkan password baru untuk akun {user?.nip} ({user?.fullName})
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {warningMessage && (
+                        <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-md mb-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            {warningMessage}
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="newPassword">Password Baru</Label>

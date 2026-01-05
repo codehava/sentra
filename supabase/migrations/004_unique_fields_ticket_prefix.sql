@@ -20,10 +20,11 @@ CREATE TABLE IF NOT EXISTS unique_field_values (
 CREATE INDEX IF NOT EXISTS idx_unique_field_values_lookup 
 ON unique_field_values(field_code, field_value, transaction_type_id);
 
--- 3. Drop and recreate generate_ticket_number function (parameter name changed from type_code to p_type_code)
+-- 3. Drop and recreate generate_ticket_number function to use type code as prefix
 DROP FUNCTION IF EXISTS generate_ticket_number(VARCHAR);
+DROP FUNCTION IF EXISTS generate_ticket_number(CHARACTER VARYING);
 
-CREATE OR REPLACE FUNCTION generate_ticket_number(p_type_code VARCHAR)
+CREATE OR REPLACE FUNCTION generate_ticket_number(type_code VARCHAR)
 RETURNS VARCHAR AS $$
 DECLARE
     today_str VARCHAR;
@@ -34,8 +35,8 @@ BEGIN
     today_str := TO_CHAR(NOW(), 'YYYYMMDD');
     
     -- Use transaction type code as prefix, fallback to 'TRX' if not provided
-    IF p_type_code IS NOT NULL AND p_type_code != '' THEN
-        prefix := p_type_code;
+    IF type_code IS NOT NULL AND type_code != '' THEN
+        prefix := type_code;
     ELSE
         prefix := 'TRX';
     END IF;

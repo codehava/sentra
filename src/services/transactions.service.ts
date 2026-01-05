@@ -132,7 +132,7 @@ export async function createTransaction(data: {
 
     // Generate ticket number with transaction type code as prefix
     const { data: ticketData } = await supabase
-        .rpc('generate_ticket_number', { p_type_code: typeCode });
+        .rpc('generate_ticket_number', { type_code: typeCode });
 
     // Get first stage for this transaction type
     const { data: firstStage, error: stageError } = await supabase

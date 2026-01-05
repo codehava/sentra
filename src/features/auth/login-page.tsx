@@ -5,10 +5,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuthStore } from '@/stores/auth-store';
-import { Loader2 } from 'lucide-react';
+import { loginWithNip } from '@/services/auth.service';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 const loginSchema = z.object({
     nip: z.string().min(1, 'NIP wajib diisi'),
@@ -16,14 +17,6 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-
-// Mock users untuk demo - nanti diganti dengan API
-// UUIDs harus match dengan data di tabel users di database
-const MOCK_USERS = [
-    { id: '00000000-0000-0000-0000-000000000001', nip: 'admin', password: 'admin', fullName: 'Administrator', email: 'admin@sentra.id', roleId: 1, role: { id: 1, code: 'ADMIN' as const, name: 'Administrator' }, isActive: true, createdAt: '', updatedAt: '' },
-    { id: '00000000-0000-0000-0000-000000000002', nip: 'maker', password: 'maker', fullName: 'Budi Maker', email: 'maker@sentra.id', roleId: 2, role: { id: 2, code: 'MAKER' as const, name: 'Maker' }, isActive: true, createdAt: '', updatedAt: '' },
-    { id: '00000000-0000-0000-0000-000000000003', nip: 'approver', password: 'approver', fullName: 'Dewi Approver', email: 'approver@sentra.id', roleId: 3, role: { id: 3, code: 'APPROVER' as const, name: 'Approver' }, isActive: true, createdAt: '', updatedAt: '' },
-];
 
 export function LoginPage() {
     const navigate = useNavigate();
@@ -43,21 +36,28 @@ export function LoginPage() {
         setIsLoading(true);
         setError('');
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        try {
+            const { user, needsPasswordChange } = await loginWithNip({
+                nip: data.nip,
+                password: data.password,
+            });
 
-        const user = MOCK_USERS.find(
-            (u) => u.nip === data.nip && u.password === data.password
-        );
+            // Store user in auth store
+            login(user, 'custom-auth-token');
 
-        if (user) {
-            login(user, 'mock-jwt-token');
-            navigate('/');
-        } else {
-            setError('NIP atau password salah');
+            // If user needs to change password, redirect to change password page
+            if (needsPasswordChange) {
+                navigate('/change-password', {
+                    state: { message: 'Silakan ubah password default Anda untuk keamanan.' }
+                });
+            } else {
+                navigate('/');
+            }
+        } catch (err: any) {
+            setError(err.message || 'Terjadi kesalahan saat login');
+        } finally {
+            setIsLoading(false);
         }
-
-        setIsLoading(false);
     };
 
     return (
@@ -81,7 +81,11 @@ export function LoginPage() {
                                     <FormItem>
                                         <FormLabel>NIP</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Masukkan NIP" {...field} />
+                                            <Input
+                                                placeholder="Masukkan NIP"
+                                                autoComplete="username"
+                                                {...field}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -95,7 +99,12 @@ export function LoginPage() {
                                     <FormItem>
                                         <FormLabel>Password</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="Masukkan password" {...field} />
+                                            <Input
+                                                type="password"
+                                                placeholder="Masukkan password"
+                                                autoComplete="current-password"
+                                                {...field}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -103,7 +112,10 @@ export function LoginPage() {
                             />
 
                             {error && (
-                                <div className="text-sm text-destructive text-center">{error}</div>
+                                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                                    <AlertCircle className="h-4 w-4" />
+                                    {error}
+                                </div>
                             )}
 
                             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -114,21 +126,9 @@ export function LoginPage() {
                     </Form>
 
                     <div className="mt-6 pt-4 border-t">
-                        <p className="text-xs text-muted-foreground text-center mb-2">Demo Accounts:</p>
-                        <div className="grid grid-cols-3 gap-2 text-xs text-center">
-                            <div className="p-2 bg-muted rounded">
-                                <div className="font-medium">admin</div>
-                                <div className="text-muted-foreground">admin</div>
-                            </div>
-                            <div className="p-2 bg-muted rounded">
-                                <div className="font-medium">maker</div>
-                                <div className="text-muted-foreground">maker</div>
-                            </div>
-                            <div className="p-2 bg-muted rounded">
-                                <div className="font-medium">approver</div>
-                                <div className="text-muted-foreground">approver</div>
-                            </div>
-                        </div>
+                        <p className="text-xs text-muted-foreground text-center">
+                            Hubungi Administrator jika Anda lupa password
+                        </p>
                     </div>
                 </CardContent>
             </Card>
