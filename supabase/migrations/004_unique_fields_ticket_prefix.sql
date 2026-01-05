@@ -20,7 +20,9 @@ CREATE TABLE IF NOT EXISTS unique_field_values (
 CREATE INDEX IF NOT EXISTS idx_unique_field_values_lookup 
 ON unique_field_values(field_code, field_value, transaction_type_id);
 
--- 3. Update generate_ticket_number function to use transaction type code as prefix
+-- 3. Drop and recreate generate_ticket_number function (parameter name changed from type_code to p_type_code)
+DROP FUNCTION IF EXISTS generate_ticket_number(VARCHAR);
+
 CREATE OR REPLACE FUNCTION generate_ticket_number(p_type_code VARCHAR)
 RETURNS VARCHAR AS $$
 DECLARE
