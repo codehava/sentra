@@ -58,3 +58,23 @@ export async function getSession() {
     if (error) throw error;
     return session;
 }
+
+// Change password for current user
+export async function changePassword(newPassword: string) {
+    const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+    });
+
+    if (error) throw error;
+    return data;
+}
+
+// Reset password (send email)
+export async function resetPassword(email: string) {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) throw error;
+    return data;
+}

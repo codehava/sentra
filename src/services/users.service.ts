@@ -47,10 +47,26 @@ export async function createUser(user: {
     email: string;
     role_id: number;
     is_active?: boolean;
-}): Promise<UserWithRole> {
+    password?: string;
+}): Promise<UserWithRole & { defaultPassword?: string }> {
+    // Generate default password if not provided
+    const defaultPassword = user.password || `Sentra@${user.nip}`;
+
+    // Note: Creating Supabase Auth user from client-side requires either:
+    // 1. Using signUp (but this will auto-login the new user)
+    // 2. Using Supabase Edge Function with service_role key
+    // 3. Manual user registration flow
+    // For now, we just create the database user and admin needs to tell user to use the default password
+
     const { data, error } = await supabase
         .from('users')
-        .insert(user)
+        .insert({
+            nip: user.nip,
+            full_name: user.full_name,
+            email: user.email,
+            role_id: user.role_id,
+            is_active: user.is_active ?? true,
+        })
         .select(`
       *,
       role:roles(*)
@@ -58,8 +74,36 @@ export async function createUser(user: {
         .single();
 
     if (error) throw error;
-    return data;
+
+    return { ...data, defaultPassword };
 }
+
+// Create auth user (should be called from server-side or edge function ideally)
+export async function createAuthUser(email: string, password: string, userId: string): Promise<void> {
+    // This creates a new Supabase Auth user
+    // Note: This will NOT work properly from client-side as it logs in the new user
+    // For production, use Supabase Edge Function with service_role key
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: {
+                user_id: userId,
+            },
+        },
+    });
+
+    if (authError) throw authError;
+
+    // Update user with auth_user_id
+    if (authData.user) {
+        await supabase
+            .from('users')
+            .update({ auth_user_id: authData.user.id })
+            .eq('email', email);
+    }
+}
+
 
 export async function updateUser(
     id: string,

@@ -18,6 +18,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
+    DialogDescription,
 } from '@/components/ui/dialog';
 import {
     Select,
@@ -29,13 +30,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Loader2, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Building2, Key, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
+
 
 export function UsersPage() {
     const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [branchDialogOpen, setBranchDialogOpen] = useState(false);
+    const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+    const [createdUserInfo, setCreatedUserInfo] = useState<{ email: string; password: string } | null>(null);
+    const [copiedPassword, setCopiedPassword] = useState(false);
     const [selectedUser, setSelectedUser] = useState<any>(null);
     const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
     const [editingItem, setEditingItem] = useState<any>(null);
@@ -70,10 +75,19 @@ export function UsersPage() {
 
     const createMutation = useMutation({
         mutationFn: createUser,
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
-            toast.success('User created');
             closeDialog();
+            // Show password dialog with the default password
+            if (data.defaultPassword) {
+                setCreatedUserInfo({
+                    email: data.email,
+                    password: data.defaultPassword,
+                });
+                setPasswordDialogOpen(true);
+            } else {
+                toast.success('User created');
+            }
         },
         onError: (error: Error) => {
             toast.error(`Failed to create: ${error.message}`);
@@ -353,8 +367,8 @@ export function UsersPage() {
                                 <label
                                     key={branch.code}
                                     className={`flex items-center gap-3 p-2 rounded cursor-pointer transition-colors ${selectedBranches.includes(branch.code)
-                                            ? 'bg-primary/10'
-                                            : 'hover:bg-muted'
+                                        ? 'bg-primary/10'
+                                        : 'hover:bg-muted'
                                         }`}
                                 >
                                     <input
@@ -385,6 +399,71 @@ export function UsersPage() {
                         </Button>
                         <Button onClick={saveBranches}>
                             Simpan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Password Info Dialog */}
+            <Dialog open={passwordDialogOpen} onOpenChange={(open) => {
+                setPasswordDialogOpen(open);
+                if (!open) {
+                    setCopiedPassword(false);
+                    setCreatedUserInfo(null);
+                }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Key className="h-5 w-5 text-green-600" />
+                            User Berhasil Dibuat
+                        </DialogTitle>
+                        <DialogDescription>
+                            Berikut adalah informasi login untuk user baru. Pastikan untuk menyimpan password ini.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
+                            <div>
+                                <Label className="text-xs text-muted-foreground">Email</Label>
+                                <p className="font-medium">{createdUserInfo?.email}</p>
+                            </div>
+                            <div>
+                                <Label className="text-xs text-muted-foreground">Default Password</Label>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <code className="flex-1 px-3 py-2 bg-white border rounded font-mono text-lg">
+                                        {createdUserInfo?.password}
+                                    </code>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => {
+                                            if (createdUserInfo?.password) {
+                                                navigator.clipboard.writeText(createdUserInfo.password);
+                                                setCopiedPassword(true);
+                                                toast.success('Password copied to clipboard');
+                                            }
+                                        }}
+                                    >
+                                        {copiedPassword ? (
+                                            <Check className="h-4 w-4 text-green-600" />
+                                        ) : (
+                                            <Copy className="h-4 w-4" />
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p className="text-sm text-amber-800">
+                                <strong>Penting:</strong> User harus melakukan registrasi di Supabase Auth dengan email dan password ini,
+                                atau admin dapat langsung menambahkan user di Supabase Dashboard → Authentication → Users.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setPasswordDialogOpen(false)}>
+                            Tutup
                         </Button>
                     </DialogFooter>
                 </DialogContent>

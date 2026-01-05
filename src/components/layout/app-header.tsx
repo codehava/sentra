@@ -2,13 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, User, Key, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/auth-store';
@@ -18,6 +19,7 @@ import {
     markAsRead,
     markAllAsRead,
 } from '@/services/notifications.service';
+import { logout } from '@/services/auth.service';
 
 export function AppHeader() {
     const navigate = useNavigate();
@@ -131,6 +133,39 @@ export function AppHeader() {
                                 </DropdownMenuItem>
                             ))
                         )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* User Menu */}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <User className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                        <div className="p-2 border-b">
+                            <p className="font-medium text-sm">{user?.fullName}</p>
+                            <p className="text-xs text-muted-foreground">{user?.email}</p>
+                            <Badge variant="outline" className="mt-1 text-xs">
+                                {user?.role?.code}
+                            </Badge>
+                        </div>
+                        <DropdownMenuItem onClick={() => navigate('/change-password')}>
+                            <Key className="h-4 w-4 mr-2" />
+                            Ubah Password
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={async () => {
+                                await logout();
+                                navigate('/login');
+                            }}
+                            className="text-destructive focus:text-destructive"
+                        >
+                            <LogOut className="h-4 w-4 mr-2" />
+                            Logout
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

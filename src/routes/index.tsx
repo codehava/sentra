@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/main-layout';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { LoginPage } from '@/features/auth/login-page';
+import { ChangePasswordPage } from '@/features/auth/change-password-page';
 import { DashboardPage } from '@/features/dashboard/dashboard-page';
 
 // Admin pages
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
             { path: 'my-tickets', element: <MyTicketsPage /> },
             { path: 'my-tickets/:id', element: <TicketDetailPage /> },
             { path: 'reports', element: <ReportsPage /> },
+            { path: 'change-password', element: <ChangePasswordPage /> },
 
             // Admin routes
             {
