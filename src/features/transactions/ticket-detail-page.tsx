@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getTransaction, getTransactionHistory } from '@/services/transactions.service';
 import { getFieldAccess } from '@/services/field-access.service';
 import { Button } from '@/components/ui/button';
+import { FileList } from '@/components/ui/file-preview-button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -164,13 +165,35 @@ export function TicketDetailPage() {
                                         const field = fa.field;
                                         const value = transaction.data?.[field?.code];
 
+                                        // Render field value based on type
+                                        const renderFieldValue = () => {
+                                            if (!value) return '-';
+
+                                            if (field?.type === 'currency') {
+                                                return formatCurrency(value);
+                                            }
+
+                                            if (field?.type === 'file') {
+                                                // File field - render FileList with preview/download
+                                                const files = Array.isArray(value) ? value : [value];
+                                                return (
+                                                    <FileList
+                                                        files={files}
+                                                        transactionId={transaction.id}
+                                                        fieldCode={field.code}
+                                                    />
+                                                );
+                                            }
+
+                                            // Default: render as string
+                                            return String(value);
+                                        };
+
                                         return (
                                             <div key={fa.id} className="grid grid-cols-3 gap-4 py-2 border-b last:border-0">
                                                 <div className="font-medium text-muted-foreground">{field?.name}</div>
                                                 <div className="col-span-2">
-                                                    {field?.type === 'currency' && value
-                                                        ? formatCurrency(value)
-                                                        : value || '-'}
+                                                    {renderFieldValue()}
                                                 </div>
                                             </div>
                                         );

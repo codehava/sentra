@@ -11,6 +11,7 @@ import { getRoutingMatrix } from '@/services/routing.service';
 import { getStatements } from '@/services/statements.service';
 import { useAuthStore } from '@/stores/auth-store';
 import { Button } from '@/components/ui/button';
+import { FileList } from '@/components/ui/file-preview-button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -281,15 +282,37 @@ export function ProcessTransactionPage() {
                                         const field = fa.field;
                                         const value = transaction.data?.[field?.code];
 
+                                        // Render field value based on type
+                                        const renderFieldValue = () => {
+                                            if (!value) return '-';
+
+                                            if (field?.type === 'currency') {
+                                                return formatCurrency(value);
+                                            }
+
+                                            if (field?.type === 'file') {
+                                                // File field - render FileList with preview/download
+                                                const files = Array.isArray(value) ? value : [value];
+                                                return (
+                                                    <FileList
+                                                        files={files}
+                                                        transactionId={transaction.id}
+                                                        fieldCode={field.code}
+                                                    />
+                                                );
+                                            }
+
+                                            // Default: render as string
+                                            return String(value);
+                                        };
+
                                         return (
                                             <div key={fa.id} className="grid grid-cols-3 gap-4 py-2 border-b last:border-0">
                                                 <div className="font-medium text-muted-foreground">
                                                     {field?.name}
                                                 </div>
                                                 <div className="col-span-2">
-                                                    {field?.type === 'currency' && value
-                                                        ? formatCurrency(value)
-                                                        : value || '-'}
+                                                    {renderFieldValue()}
                                                 </div>
                                             </div>
                                         );
@@ -365,8 +388,8 @@ export function ProcessTransactionPage() {
                                         key={stmt.id}
                                         htmlFor={`stmt-${stmt.id}`}
                                         className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${statementsAccepted[stmt.id]
-                                                ? 'bg-green-50 border-green-200'
-                                                : 'bg-muted/30 hover:bg-muted/50'
+                                            ? 'bg-green-50 border-green-200'
+                                            : 'bg-muted/30 hover:bg-muted/50'
                                             }`}
                                     >
                                         <input
