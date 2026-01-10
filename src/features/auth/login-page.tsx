@@ -5,11 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
+import { GlassCard, GlassContent, GlassHeader, GlassTitle, GlassDescription } from '@/components/ui/glass-card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuthStore } from '@/stores/auth-store';
 import { loginWithNip } from '@/services/auth.service';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const loginSchema = z.object({
     nip: z.string().min(1, 'NIP wajib diisi'),
@@ -61,17 +62,30 @@ export function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <div className="flex justify-center mb-4">
-                        <img src="/logo-sentra.png" alt="SENTRA" className="h-20 w-auto object-contain" />
+        <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-background">
+            {/* Background Decor */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-500/20 blur-[120px]" />
+            </div>
+
+            {/* Theme Toggle removed as per user request */}
+
+            <GlassCard className="w-full max-w-md z-10 glass-panel border-white/20 dark:border-white/10">
+                <GlassHeader className="text-center space-y-4 pb-2">
+                    <div className="flex justify-center mb-2">
+                        <img src="/logo-sentra.png" alt="SENTRA" className="h-24 w-auto object-contain drop-shadow-lg" />
                     </div>
-                    <CardDescription className="text-base">
-                        Sistem End to End Monitoring Transaksi
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
+                    <div>
+                        <GlassTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+                            SENTRA
+                        </GlassTitle>
+                        <GlassDescription className="text-base mt-2">
+                            Sistem End to End Monitoring Transaksi
+                        </GlassDescription>
+                    </div>
+                </GlassHeader>
+                <GlassContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                             <FormField
@@ -84,6 +98,7 @@ export function LoginPage() {
                                             <Input
                                                 placeholder="Masukkan NIP"
                                                 autoComplete="username"
+                                                className="bg-background/50 border-input/50 focus:bg-background transition-colors"
                                                 {...field}
                                             />
                                         </FormControl>
@@ -103,6 +118,7 @@ export function LoginPage() {
                                                 type="password"
                                                 placeholder="Masukkan password"
                                                 autoComplete="current-password"
+                                                className="bg-background/50 border-input/50 focus:bg-background transition-colors"
                                                 {...field}
                                             />
                                         </FormControl>
@@ -112,26 +128,26 @@ export function LoginPage() {
                             />
 
                             {error && (
-                                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                                <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-md border border-destructive/20">
                                     <AlertCircle className="h-4 w-4" />
                                     {error}
                                 </div>
                             )}
 
-                            <Button type="submit" className="w-full" disabled={isLoading}>
+                            <Button type="submit" className="w-full glass-button font-semibold h-11" disabled={isLoading}>
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Masuk
                             </Button>
                         </form>
                     </Form>
 
-                    <div className="mt-6 pt-4 border-t">
+                    <div className="mt-8 pt-6 border-t border-border/50">
                         <p className="text-xs text-muted-foreground text-center">
                             Hubungi Administrator jika Anda lupa password
                         </p>
                     </div>
-                </CardContent>
-            </Card>
+                </GlassContent>
+            </GlassCard>
         </div>
     );
 }
